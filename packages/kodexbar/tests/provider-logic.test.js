@@ -375,6 +375,38 @@ assert.equal(resetOnlyRow.compactKey, "tertiary")
 assert.equal(resetOnlyRow.percentLeft, null)
 assert.equal(resetOnlyRow.usageKnown, false, "reset-only standard rows mark usage as unknown")
 assert.equal(resetOnlyRow.windowBadge, "T", "standard rows carry compact window badges")
+
+const markerEnd = Date.parse("2026-11-18T12:00:00Z")
+const sessionWindow = { resetsAt: "2026-11-18T12:00:00Z", windowMinutes: 300 }
+const weeklyWindow = { resetsAt: sessionWindow.resetsAt, windowMinutes: 10080 }
+assert.equal(context.elapsedFraction(sessionWindow, markerEnd - 150 * 60000), 0.5)
+assert.equal(context.elapsedFraction(weeklyWindow, markerEnd - 2520 * 60000), 0.75)
+assert.equal(context.elapsedFraction(sessionWindow, markerEnd - 300 * 60000), 0)
+assert.equal(context.elapsedFraction(sessionWindow, markerEnd), 1)
+assert.equal(context.elapsedFraction(sessionWindow, markerEnd + 1), -1, "expired windows hide the marker")
+assert.equal(context.elapsedFraction(sessionWindow, markerEnd - 300 * 60000 - 1), -1,
+    "future windows hide the marker")
+assert.equal(context.elapsedFraction(sessionWindow, NaN), -1)
+assert.equal(context.elapsedFraction(sessionWindow, Infinity), -1)
+assert.equal(context.elapsedFraction(null, markerEnd), -1)
+assert.equal(context.elapsedFraction({ windowMinutes: 300 }, markerEnd), -1)
+assert.equal(context.elapsedFraction({ resetsAt: "invalid", windowMinutes: 300 }, markerEnd), -1)
+for (const minutes of [undefined, null, 0, -1, NaN, Infinity, "300"]) {
+    assert.equal(context.elapsedFraction({ resetsAt: sessionWindow.resetsAt, windowMinutes: minutes }, markerEnd), -1)
+}
+const billingWindow = { startsAt: "2026-11-01T12:00:00Z", resetsAt: "2026-12-01T12:00:00Z" }
+assert.equal(context.elapsedFraction(billingWindow, Date.parse("2026-11-16T12:00:00Z")), 0.5,
+    "billing windows use explicit boundaries without assuming a month length")
+for (const startsAt of ["invalid", "2026-12-01T12:00:00Z", "2026-12-02T12:00:00Z"]) {
+    assert.equal(context.elapsedFraction({ ...billingWindow, startsAt }, markerEnd), -1)
+}
+const sessionRow = context.standardWindowRow("primary", "Session", 56, sessionWindow.resetsAt, "", sessionWindow)
+assert.equal(context.elapsedFraction(sessionRow, markerEnd - 150 * 60000), 0.5,
+    "normalization preserves session timing for rendering")
+const billingRow = context.standardWindowRow("weekly", "Billing", 56, billingWindow.resetsAt, "", billingWindow)
+assert.equal(context.elapsedFraction(billingRow, Date.parse("2026-11-16T12:00:00Z")), 0.5,
+    "normalization preserves billing boundaries for rendering")
+assert.equal(context.elapsedFraction(resetOnlyRow, markerEnd), -1, "a label alone cannot supply timing")
 assert.equal(context.quotaWindowBadge("flash", "Gemini 5-hour"), "5h")
 assert.equal(context.quotaWindowBadge("weekly-plan", "Weekly"), "W")
 assert.equal(context.quotaWindowBadge("weekly-limit", "Weekly rate limit"), "W")
