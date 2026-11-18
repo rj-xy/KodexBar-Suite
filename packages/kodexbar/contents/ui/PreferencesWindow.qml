@@ -31,6 +31,7 @@ QQC2.ApplicationWindow {
     property bool workingShowCreditsInPanel: false
     property bool workingIncludeStatus: false
     property bool workingShowEmailInWidget: false
+    property bool workingShowElapsedTimeMarkers: true
     property bool workingShowCostSummary: true
     property string workingShortcut: ""
     // Extra Codex/Claude accounts managed by kodexbar-quotas profiles (not kdialog).
@@ -173,6 +174,7 @@ QQC2.ApplicationWindow {
             showCreditsInPanel: workingShowCreditsInPanel,
             includeStatus: workingIncludeStatus,
             showEmailInWidget: workingShowEmailInWidget,
+            showElapsedTimeMarkers: workingShowElapsedTimeMarkers,
             showCostSummary: workingShowCostSummary,
             shortcut: workingShortcut
         })
@@ -204,6 +206,8 @@ QQC2.ApplicationWindow {
             ? false : Plasmoid.configuration.includeStatus
         workingShowEmailInWidget = Plasmoid.configuration.showEmailInWidget === undefined
             ? false : Plasmoid.configuration.showEmailInWidget
+        workingShowElapsedTimeMarkers = Plasmoid.configuration.showElapsedTimeMarkers === undefined
+            ? true : Plasmoid.configuration.showElapsedTimeMarkers
         workingShowCostSummary = Plasmoid.configuration.showCostSummary === undefined
             ? true : Plasmoid.configuration.showCostSummary
         workingShortcut = String(Plasmoid.globalShortcut || "")
@@ -224,6 +228,7 @@ QQC2.ApplicationWindow {
         Plasmoid.configuration.showCreditsInPanel = workingShowCreditsInPanel
         Plasmoid.configuration.includeStatus = workingIncludeStatus
         Plasmoid.configuration.showEmailInWidget = workingShowEmailInWidget
+        Plasmoid.configuration.showElapsedTimeMarkers = workingShowElapsedTimeMarkers
         Plasmoid.configuration.showCostSummary = workingShowCostSummary
         Plasmoid.globalShortcut = workingShortcut
         savedState = snapshot()
@@ -243,6 +248,7 @@ QQC2.ApplicationWindow {
         workingShowCreditsInPanel = false
         workingIncludeStatus = false
         workingShowEmailInWidget = false
+        workingShowElapsedTimeMarkers = true
         workingShowCostSummary = true
         workingShortcut = ""
     }
@@ -1199,6 +1205,21 @@ QQC2.ApplicationWindow {
                                                     text: i18n("Show account email")
                                                     checked: preferences.workingShowEmailInWidget
                                                     onToggled: preferences.workingShowEmailInWidget = checked
+                                                }
+
+                                                QQC2.CheckBox {
+                                                    objectName: "showElapsedTimeMarkersCheck"
+                                                    text: i18n("Mark elapsed time on quota bars")
+                                                    checked: preferences.workingShowElapsedTimeMarkers
+                                                    onToggled: preferences.workingShowElapsedTimeMarkers = checked
+                                                }
+
+                                                QQC2.Label {
+                                                    Layout.fillWidth: true
+                                                    text: i18n("The tick shows how much of the quota window has passed. Usage ahead of it is above the window's average pace.")
+                                                    color: preferences.th("#a6acbe")
+                                                    font.pixelSize: preferences.fontSizeSecondary
+                                                    wrapMode: Text.WordWrap
                                                 }
 
                                                 QQC2.CheckBox {

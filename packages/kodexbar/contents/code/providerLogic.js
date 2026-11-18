@@ -763,6 +763,32 @@ function standardWindowVisible(percentLeft, resetsAt) {
     return Boolean(resetsAt)
 }
 
+// Only real window timing can locate a marker. Labels such as "Session" or
+// "Weekly" are presentation hints and must not invent a duration.
+function elapsedFraction(window, now) {
+    if (!window || typeof now !== "number" || !isFinite(now)) {
+        return -1
+    }
+    var end = Date.parse(window.resetsAt)
+    if (!isFinite(end)) {
+        return -1
+    }
+    var start
+    if (window.startsAt) {
+        start = Date.parse(window.startsAt)
+    } else {
+        var minutes = window.windowMinutes
+        if (typeof minutes !== "number" || !isFinite(minutes) || minutes <= 0) {
+            return -1
+        }
+        start = end - minutes * 60000
+    }
+    if (!isFinite(start) || start >= end || now < start || now > end) {
+        return -1
+    }
+    return (now - start) / (end - start)
+}
+
 function standardWindowRow(quotaKey, title, percentLeft, resetsAt, detail, window) {
     if (!standardWindowVisible(percentLeft, resetsAt)) {
         return null
@@ -772,6 +798,8 @@ function standardWindowRow(quotaKey, title, percentLeft, resetsAt, detail, windo
         title: title,
         percentLeft: usageKnown ? Number(percentLeft) : null,
         resetsAt: resetsAt || null,
+        startsAt: window ? window.startsAt : undefined,
+        windowMinutes: window ? window.windowMinutes : undefined,
         detail: detail || "",
         usageKnown: usageKnown,
         compactKey: compactQuotaKey(quotaKey),

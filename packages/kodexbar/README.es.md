@@ -16,6 +16,7 @@ Este paquete también se mantiene dentro del [monorepo KodexBar Suite](../../REA
 
 ## Funciones
 
+- Marca el tiempo transcurrido con una línea de contraste en las barras de cuota, actualizada cada 30 segundos mientras el popup está abierto. El consumo que supera la marca está por encima del ritmo medio de la ventana. Las ventanas sin datos temporales válidos no muestran marca. Se puede desactivar en Preferencias, en Popup, con **Mark elapsed time on quota bars**.
 - Usa el diseño Signal Console seleccionado en un popup estable de 520 por 400. Una sola navegación con etiquetas conecta Proveedores, Local y Skills, mientras el proveedor activo recibe una identidad compacta, un resumen enfocado de cuotas, detalles propios del proveedor y una línea condensada de costo.
 - Mantiene separado el botón de terminal **AI CLI Control** del tab de modelos locales. Su menú abre el selector o actualiza todas las CLI de proveedor.
 - Añade un destino **Local** con etiqueta. Agrupa pesos instalados y montados, muestra estado, confianza de clasificación, rendimiento real cuando el runtime lo aporta, sparkline acotado de actividad y controles seguros de montar o desmontar.

@@ -87,6 +87,8 @@ PlasmoidItem {
     property bool showUsedPercentInPanel: Plasmoid.configuration.showUsedPercentInPanel === undefined ? true : Plasmoid.configuration.showUsedPercentInPanel
     property bool showProviderInPanel: Plasmoid.configuration.showProviderInPanel === undefined ? true : Plasmoid.configuration.showProviderInPanel
     property bool showEmailInWidget: Plasmoid.configuration.showEmailInWidget === undefined ? false : Plasmoid.configuration.showEmailInWidget
+    property bool showElapsedTimeMarkers: Plasmoid.configuration.showElapsedTimeMarkers === undefined ? true : Plasmoid.configuration.showElapsedTimeMarkers
+    property double markerNow: Date.now()
     property bool includeStatus: Plasmoid.configuration.includeStatus === undefined ? false : Plasmoid.configuration.includeStatus
     property bool showCostSummary: Plasmoid.configuration.showCostSummary === undefined ? true : Plasmoid.configuration.showCostSummary
     property int costRefreshSeconds: Math.max(1, Plasmoid.configuration.costRefreshSeconds || 900)
@@ -2036,6 +2038,8 @@ PlasmoidItem {
                 title: antigravityWindow.title || i18n("Upstream quota"),
                 percentLeft: antigravityKnown ? antigravityLeft : null,
                 resetsAt: antigravityReset,
+                startsAt: antigravityWindow.window.startsAt,
+                windowMinutes: antigravityWindow.window.windowMinutes,
                 detail: windowDetail(antigravityWindow.window, antigravityKnown),
                 usageKnown: antigravityKnown,
                 precisePercent: true,
@@ -2065,6 +2069,8 @@ PlasmoidItem {
                     title: extra.title || i18n("Extra"),
                     percentLeft: extraUsageKnown ? extraLeft : null,
                     resetsAt: resetAt(extra.window),
+                    startsAt: extra.window.startsAt,
+                    windowMinutes: extra.window.windowMinutes,
                     detail: windowDetail(extra.window, extraUsageKnown),
                     usageKnown: extraUsageKnown,
                     compactKey: ProviderLogic.compactQuotaKey(extra.title || "extra"),
@@ -2412,6 +2418,27 @@ PlasmoidItem {
         }
     }
 
+    component ElapsedTimeMarker: Rectangle {
+        required property var quotaWindow
+        readonly property real fraction: ProviderLogic.elapsedFraction(quotaWindow, root.markerNow)
+        visible: root.showElapsedTimeMarkers && fraction >= 0
+        width: 4
+        height: parent.height + 8
+        radius: 2
+        x: Math.max(0, Math.min(parent.width - width, parent.width * fraction - width / 2))
+        anchors.verticalCenter: parent.verticalCenter
+        color: root.textColor
+        border.width: 1
+        border.color: root.surfaceColor
+        z: 2
+        Accessible.role: Accessible.Indicator
+        Accessible.name: i18n("%1% of quota window elapsed", Math.round(fraction * 100))
+
+        HoverHandler { id: markerHover }
+        QQC2.ToolTip.visible: markerHover.hovered
+        QQC2.ToolTip.text: i18n("%1% of quota window elapsed", Math.round(fraction * 100))
+    }
+
     component SignalQuotaRow: Item {
         id: signalQuotaRow
 
@@ -2490,7 +2517,6 @@ PlasmoidItem {
                 Layout.preferredHeight: 6
                 radius: 3
                 color: root.th("#343943")
-                clip: true
 
                 Rectangle {
                     visible: !signalQuotaRow.hasSegments
@@ -2517,6 +2543,10 @@ PlasmoidItem {
                             color: root.th(root.segmentColor(modelData.title, index, modelData.productId))
                         }
                     }
+                }
+
+                ElapsedTimeMarker {
+                    quotaWindow: signalQuotaRow.rowData
                 }
             }
 
@@ -4457,13 +4487,16 @@ PlasmoidItem {
                                         Layout.preferredHeight: 6
                                         radius: 3
                                         color: root.th("#20232d")
-                                        clip: true
 
                                         Rectangle {
                                             width: parent.width * parent.used / 100
                                             height: parent.height
                                             radius: 3
                                             color: root.metricAccent(modelData.percentLeft, modelData.usageKnown)
+                                        }
+
+                                        ElapsedTimeMarker {
+                                            quotaWindow: modelData
                                         }
                                     }
 
@@ -4479,7 +4512,6 @@ PlasmoidItem {
                                         Layout.preferredHeight: 6
                                         radius: 3
                                         color: root.th("#20232d")
-                                        clip: true
 
                                         Row {
                                             anchors.fill: parent
@@ -4510,6 +4542,10 @@ PlasmoidItem {
                                                     }
                                                 }
                                             }
+                                        }
+
+                                        ElapsedTimeMarker {
+                                            quotaWindow: modelData
                                         }
                                     }
 
@@ -5541,6 +5577,14 @@ PlasmoidItem {
                 root.skillsOperation = ""
             }
         }
+    }
+
+    Timer {
+        interval: 30000
+        repeat: true
+        running: root.expanded && root.showElapsedTimeMarkers
+        triggeredOnStart: true
+        onTriggered: root.markerNow = Date.now()
     }
 
     Timer {
